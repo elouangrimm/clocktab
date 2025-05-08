@@ -6,46 +6,49 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Minimal Clock</title>
     <link
-        href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&family=Roboto+Slab:wght@300;400;700&family=Lora:wght@400;700&family=Roboto+Mono:wght@300;400;700&family=Noto+Sans:wght@300;400;700&family=Material+Icons"
+        href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&family=Roboto+Slab:wght@300;400;700&family=Lora:wght@400;700&family=Roboto+Mono:wght@300;400;700&family=Noto+Sans:wght@300;400;500;700&family=Material+Icons+Outlined"
         rel="stylesheet">
+    <!-- Using Material Icons Outlined for a more M3 feel -->
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
     <div class="app-container">
         <div id="main-display">
-            <!-- Clock elements will be populated here by JS -->
             <span id="clock-hours">00</span><span class="clock-separator">:</span><span
                 id="clock-minutes">00</span><span class="clock-separator" id="clock-second-separator">:</span><span
                 id="clock-seconds">00</span>
             <span id="clock-ampm"></span>
-            <!-- Timer input will replace clock elements -->
             <input type="text" id="timer-input" placeholder="HH:MM:SS or MM:SS or SS" style="display: none;">
         </div>
-        <div id="date-display-container"></div> <!-- Date will be appended here -->
+        <div id="date-display-container"></div>
 
         <div id="timer-controls-container" style="display: none;">
-            <button id="timer-start-pause-btn" class="control-btn">Start</button>
-            <button id="timer-reset-btn" class="control-btn">Reset</button>
+            <button id="timer-start-pause-btn" class="control-btn m3-filled-button">Start</button>
+            <button id="timer-reset-btn" class="control-btn m3-tonal-button">Reset</button>
         </div>
     </div>
 
     <div class="action-buttons-container">
         <div class="action-buttons">
-            <button id="mode-switch-btn" title="Switch to Timer"><i class="material-icons">timer</i></button>
-            <button id="settings-btn" title="Settings"><i class="material-icons">settings</i></button>
-            <button id="fullscreen-btn" title="Toggle Fullscreen"><i class="material-icons">fullscreen</i></button>
+            <button id="mode-switch-btn" class="m3-icon-button" title="Switch to Timer"><i
+                    class="material-icons-outlined">timer</i></button>
+            <button id="settings-btn" class="m3-icon-button" title="Settings"><i
+                    class="material-icons-outlined">settings</i></button>
+            <button id="fullscreen-btn" class="m3-icon-button" title="Toggle Fullscreen"><i
+                    class="material-icons-outlined">fullscreen</i></button>
         </div>
     </div>
 
     <div id="settings-modal" class="modal">
-        <div class="modal-content">
-            <span class="close-btn" id="close-settings-btn">×</span>
+        <div class="modal-content m3-surface-container-high">
+            <span class="close-btn m3-icon-button" id="close-settings-btn"><i
+                    class="material-icons-outlined">close</i></span>
             <h2>Settings</h2>
 
             <div class="setting-group">
                 <label for="time-format-select">Time Format:</label>
-                <select id="time-format-select">
+                <select id="time-format-select" class="m3-select">
                     <option value="24">24-Hour</option>
                     <option value="12">12-Hour (AM/PM)</option>
                 </select>
@@ -53,45 +56,50 @@
 
             <div class="setting-group">
                 <label for="font-select">Clock Font:</label>
-                <select id="font-select">
-                    <option value="'Roboto Mono', monospace">Roboto Mono (Monospace)</option>
-                    <option value="'Merriweather', serif">Merriweather (Serif)</option>
-                    <option value="'Roboto Slab', serif">Roboto Slab (Serif)</option>
-                    <option value="'Lora', serif">Lora (Serif)</option>
+                <select id="font-select" class="m3-select">
+                    <option value="'Roboto Mono', monospace">Roboto Mono</option>
+                    <option value="'Merriweather', serif">Merriweather</option>
+                    <option value="'Roboto Slab', serif">Roboto Slab</option>
+                    <option value="'Lora', serif">Lora</option>
                     <option value="'Noto Sans', sans-serif">Noto Sans</option>
-                    <option value="'Courier New', Courier, monospace">Courier New (Monospace)</option>
-                    <option value="'Lucida Console', Monaco, monospace">Lucida Console (Monospace)</option>
+                    <option value="'Courier New', Courier, monospace">Courier New</option>
+                    <option value="'Lucida Console', Monaco, monospace">Lucida Console</option>
                 </select>
             </div>
 
             <div class="setting-group">
                 <label for="font-size-input">Clock Font Size (vw):</label>
-                <input type="number" id="font-size-input" value="15" min="1" max="50" step="1">
+                <input type="number" id="font-size-input" class="m3-text-field" value="15" min="1" max="50" step="1">
             </div>
 
             <div class="setting-group">
+                <label for="bg-color-input-m3">Primary Hue (0-360):</label>
+                <input type="number" id="bg-color-input-m3" class="m3-text-field" value="210" min="0" max="360" step="1"
+                    title="Changes the base color for the theme">
+            </div>
+            <!-- Old color pickers can be hidden or removed if hue drives everything -->
+            <!-- <div class="setting-group" style="display:none;">
                 <label for="bg-color-input">Background Color:</label>
                 <input type="color" id="bg-color-input" value="#1a1a1a">
             </div>
-
-            <div class="setting-group">
+            <div class="setting-group" style="display:none;">
                 <label for="text-color-input">Text Color:</label>
                 <input type="color" id="text-color-input" value="#e0e0e0">
-            </div>
+            </div> -->
 
             <div class="setting-group">
                 <label for="show-seconds-checkbox">Show Seconds (Clock):</label>
-                <input type="checkbox" id="show-seconds-checkbox" checked>
+                <input type="checkbox" id="show-seconds-checkbox" class="m3-checkbox" checked>
             </div>
 
             <div class="setting-group">
                 <label for="show-date-checkbox">Show Date:</label>
-                <input type="checkbox" id="show-date-checkbox">
+                <input type="checkbox" id="show-date-checkbox" class="m3-checkbox">
             </div>
 
             <div class="setting-group">
                 <label for="timer-sound-select">Timer Sound:</label>
-                <select id="timer-sound-select">
+                <select id="timer-sound-select" class="m3-select">
                     <option value="sounds/alarm1.mp3">Alarm 1</option>
                     <option value="sounds/bell.mp3">Bell</option>
                     <option value="sounds/digital.mp3">Digital Alert</option>
@@ -100,7 +108,7 @@
                 </select>
             </div>
 
-            <button id="reset-settings-btn">Reset to Defaults</button>
+            <button id="reset-settings-btn" class="m3-filled-tonal-button">Reset to Defaults</button>
         </div>
     </div>
 
