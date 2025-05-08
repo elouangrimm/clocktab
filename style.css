@@ -24,10 +24,10 @@
     /* Error Colors (for reset button) */
     --m3-error-hue: 0;
     /* Red */
-    --m3-error: hsl(var(--m3-error-hue), 70%, 50%);
+    --m3-error: hsl(var(--m3-error-hue), 80%, 55%);
     --m3-on-error: hsl(var(--m3-error-hue), 70%, 95%);
     --m3-error-container: hsl(var(--m3-error-hue), 70%, 20%);
-    --m3-on-error-container: hsl(var(--m3-error-hue), 70%, 85%);
+    --m3-on-error-container: hsl(var(--m3-error-hue), 70%, 88%);
 
 
     /* Surface Colors (backgrounds for dark theme) */
@@ -110,38 +110,40 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 90vw;
+    width: auto;
+    /* Allow content to define width */
+    min-width: 70vw;
+    /* Ensure it has some base width */
+    max-width: 95vw;
     position: relative;
-    /* For absolute positioning of timer input */
+    color: var(--m3-on-surface);
+    /* Explicitly set color for clock digits */
 }
 
-#main-display .clock-digits {
-    /* Wrapper for clock numbers for better control */
+.clock-digits {
     display: inline-flex;
-    /* Allows letter-spacing to work as expected */
     align-items: baseline;
+    visibility: visible;
+    /* Default to visible */
+    transition: visibility 0s;
+    /* No transition for visibility, but can add opacity if desired */
 }
 
-#main-display .clock-digits>span:not(.clock-ampm) {
-    /* Target H, M, S spans */
+.clock-digits>span:not(.clock-ampm) {
     letter-spacing: -0.03em;
-    /* Slightly pull digits closer if needed, adjust per font */
 }
 
 
-#main-display .clock-separator.main-sep {
-    /* Target main colons */
+.clock-separator.main-sep {
     opacity: 0.7;
     margin: 0 0.01em;
-    /* Reduce space around colons */
     padding: 0 0.01em;
-    /* Further fine-tuning if needed */
-    transform: scaleY(0.9);
-    /* Make colons slightly shorter if desired */
+    transform: scaleY(0.9) translateY(-0.02em);
+    /* Adjust vertical alignment */
 }
 
 
-#main-display #clock-ampm {
+#clock-ampm {
     font-size: 0.25em;
     margin-left: 0.2em;
     vertical-align: baseline;
@@ -150,36 +152,45 @@ body {
 }
 
 #timer-input {
-    font-family: var(--clock-font-family);
-    font-size: var(--clock-font-size);
-    /* Match clock size */
+    font-family: inherit;
+    /* Inherit from #main-display */
+    font-size: inherit;
+    /* Inherit from #main-display */
     font-weight: inherit;
+    /* Inherit from #main-display */
+    letter-spacing: -0.03em;
+    /* Match clock digits */
+    line-height: 1;
+    /* Match clock digits */
     color: var(--m3-on-surface);
-    background-color: var(--m3-surface-container-low);
-    /* Slight background for visibility */
+    background-color: transparent;
     border: none;
     border-bottom: 2px solid var(--m3-primary);
+    /* Focus indicator */
     text-align: center;
     width: 100%;
-    /* Take full width of main-display */
-    max-width: 700px;
+    /* Will be constrained by #main-display's auto width */
     outline: none;
-    padding: 0.05em 0;
+    padding: 0;
+    /* Remove padding as it should align perfectly */
     box-sizing: border-box;
     position: absolute;
-    /* Position over the clock digits when shown */
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
     z-index: 5;
-    /* Ensure it's above the clock digits */
+    caret-color: var(--m3-primary);
+    /* Cursor color */
 }
 
 #timer-input::placeholder {
     color: var(--m3-on-surface-variant);
-    font-size: 0.35em;
+    font-size: 0.3em;
+    /* Relative to timer input's inherited font-size */
     opacity: 0.8;
     font-weight: 300;
+    letter-spacing: normal;
+    /* Reset letter-spacing for placeholder */
 }
 
 #date-display-container {
@@ -241,7 +252,6 @@ body {
     transform: scale(0.98);
 }
 
-/* Moved transform here for all buttons */
 .control-btn:active::before, .m3-button-base:active::before {
     opacity: var(--m3-state-pressed-opacity);
 }
@@ -265,23 +275,19 @@ body {
     background-color: hsl(var(--m3-primary-hue), 25%, 30%);
 }
 
-/* Reset Button Style - M3 Error Button */
 .m3-error-button {
     background-color: var(--m3-error-container);
-    /* A tonal error style */
     color: var(--m3-on-error-container);
-    border: 1px solid var(--m3-error);
-    /* Optional: subtle border */
+    border-radius: var(--m3-corner-l);
+    /* Slightly less rounded for distinctiveness if desired */
 }
 
 .m3-error-button:hover {
     background-color: hsl(var(--m3-error-hue), 70%, 25%);
-    /* Darker on hover */
 }
 
 .m3-error-button:focus-visible::before {
     background-color: var(--m3-error);
-    /* Use error color for focus state layer */
 }
 
 
@@ -306,15 +312,12 @@ body {
     display: flex;
     gap: 8px;
     opacity: 1;
-    /* Start visible */
     transition: opacity 0.5s ease-in-out;
-    /* Smooth fade */
 }
 
 .action-buttons.hidden {
     opacity: 0;
     pointer-events: none;
-    /* Prevent interaction when hidden */
 }
 
 
@@ -431,41 +434,41 @@ body {
     gap: 16px;
 }
 
-.setting-group label {
+.setting-group label:first-child {
+    /* Label for the setting name */
     flex-shrink: 0;
     font-size: 0.9em;
     color: var(--m3-on-surface-variant);
+    margin-right: auto;
+    /* Push control to the right */
 }
+
 
 /* M3 Text Fields and Selects */
 .m3-text-field, .m3-select {
     font-family: var(--ui-font-family);
     padding: 10px 14px;
-    /* Reduced padding for selects */
     border-radius: var(--m3-corner-xs);
     border: 1px solid var(--m3-outline-variant);
     background-color: var(--m3-surface-container-highest);
     color: var(--m3-on-surface);
-    flex-grow: 1;
+    /* flex-grow: 1; Removed to let them size naturally or by specific widths */
     min-width: 80px;
     font-size: 0.95em;
     transition: border-color 0.2s, box-shadow 0.2s;
     outline: none;
     line-height: 1.2;
-    /* Ensure text isn't cut off in selects */
     height: auto;
-    /* Allow select to determine its height */
 }
 
 .m3-select {
     appearance: none;
-    /* For custom arrow if desired, or rely on browser default */
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' height='24' viewBox='0 -960 960 960' width='24' fill='%23${(props) => props.arrowColor || 'e0e0e0'}'%3E%3Cpath d='M480-345 240-585l56-56 184 184 184-184 56 56-240 240Z'/%3E%3C/svg%3E");
-    /* Basic dropdown arrow */
     background-repeat: no-repeat;
     background-position: right 10px center;
     padding-right: 30px;
-    /* Space for arrow */
+    width: 180px;
+    /* Give select a decent width */
 }
 
 .m3-text-field:focus, .m3-select:focus {
@@ -475,39 +478,38 @@ body {
 
 .m3-text-field[type="number"] {
     width: 80px;
-    flex-grow: 0;
 }
 
 .m3-color-picker {
     -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
-    width: 50px;
-    /* Or adjust as needed */
-    height: 30px;
+    width: 40px;
+    /* Smaller color picker */
+    height: 28px;
     background-color: transparent;
     border: 1px solid var(--m3-outline-variant);
     border-radius: var(--m3-corner-s);
     cursor: pointer;
     padding: 0;
-    /* Remove default padding */
-    flex-grow: 0;
 }
 
 .m3-color-picker::-webkit-color-swatch-wrapper {
-    padding: 0;
+    padding: 2px;
+    /* Add some padding inside */
     border-radius: var(--m3-corner-s);
 }
 
 .m3-color-picker::-webkit-color-swatch {
     border: none;
-    border-radius: var(--m3-corner-s);
+    border-radius: calc(var(--m3-corner-s) - 2px);
+    /* Adjust for wrapper padding */
 }
 
 .m3-color-picker::-moz-color-swatch {
-    /* Firefox */
     border: none;
     border-radius: var(--m3-corner-s);
+    padding: 2px;
 }
 
 
@@ -555,11 +557,98 @@ body {
     margin-top: 24px;
 }
 
+/* M3 Switch Styles */
+.m3-switch-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.m3-switch-label {
+    font-size: 0.9em;
+    color: var(--m3-on-surface-variant);
+    cursor: default;
+}
+
+.m3-switch {
+    /* Hidden actual checkbox */
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
+}
+
+.m3-switch-track {
+    cursor: pointer;
+    width: 52px;
+    height: 32px;
+    background-color: var(--m3-surface-container-highest);
+    border: 2px solid var(--m3-outline);
+    display: inline-block;
+    border-radius: var(--m3-corner-full);
+    position: relative;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.m3-switch-track::before {
+    /* The thumb */
+    content: "";
+    position: absolute;
+    height: 24px;
+    width: 24px;
+    left: 2px;
+    bottom: 2px;
+    background-color: var(--m3-outline);
+    border-radius: 50%;
+    transition: transform 0.2s, background-color 0.2s, width 0.2s;
+    /* Added width transition */
+}
+
+.m3-switch:checked+.m3-switch-track {
+    background-color: var(--m3-primary);
+    border-color: var(--m3-primary);
+}
+
+.m3-switch:checked+.m3-switch-track::before {
+    background-color: var(--m3-on-primary);
+    transform: translateX(20px);
+}
+
+/* Optional: Icon inside thumb */
+.m3-switch:checked+.m3-switch-track::after {
+    content: "\e5ca";
+    /* Material check icon, needs icon font on track or pseudo */
+    font-family: 'Material Icons Outlined';
+    font-size: 16px;
+    color: var(--m3-primary);
+    position: absolute;
+    left: 7px;
+    /* Adjust for positioning */
+    top: 50%;
+    transform: translateY(-50%) translateX(20px);
+    transition: transform 0.2s, color 0.2s;
+    opacity: 1;
+}
+
+.m3-switch+.m3-switch-track::after {
+    /* Icon for unchecked state (optional) */
+    content: "";
+    /* No icon for unchecked by default or use \e5cd for close */
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.m3-switch:focus-visible+.m3-switch-track {
+    box-shadow: 0 0 0 2px var(--m3-surface), 0 0 0 4px var(--m3-primary);
+    /* Focus ring */
+}
+
+
 /* Blinking cursor for timer finished */
-.timer-finished-blink #clock-hours,
-.timer-finished-blink #clock-minutes,
-.timer-finished-blink #clock-seconds,
-.timer-finished-blink .clock-separator {
+.timer-finished-blink .clock-digits,
+/* Blink the whole digit group */
+.timer-finished-blink #clock-ampm {
+    /* If ampm is shown during timer end */
     animation: blink 0.8s step-start infinite;
 }
 
