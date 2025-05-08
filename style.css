@@ -1,14 +1,21 @@
 :root {
     --bg-color: #1a1a1a;
     --text-color: #e0e0e0;
-    --primary-font: 'Merriweather', serif;
+    --clock-font-family: 'Roboto Mono', monospace;
+    /* Default Monospace for clock */
+    --settings-font-family: 'Noto Sans', sans-serif;
+    /* Default Sans-serif for settings */
     --clock-font-size: 15vw;
     --separator-opacity: 0.8;
+    --button-bg-color: #333;
+    --button-hover-bg-color: #444;
+    --accent-color: #4CAF50;
 }
 
 body {
     margin: 0;
-    font-family: var(--primary-font);
+    font-family: var(--clock-font-family);
+    /* Default, clock can override */
     background-color: var(--bg-color);
     color: var(--text-color);
     display: flex;
@@ -16,68 +23,116 @@ body {
     justify-content: center;
     min-height: 100vh;
     overflow: hidden;
-    /* Prevents scrollbars during fullscreen transitions */
     transition: background-color 0.3s, color 0.3s;
 }
 
-.container {
+.app-container {
     text-align: center;
-}
-
-#clock-display {
-    font-size: var(--clock-font-size);
-    font-weight: 300;
-    line-height: 1;
-    white-space: nowrap;
-    /* Prevent wrapping during resize */
-    transition: font-size 0.3s;
-}
-
-#clock-display .separator {
-    opacity: var(--separator-opacity);
-    margin: 0 0.05em;
-    /* Adjust spacing around separator */
-}
-
-#clock-display #ampm {
-    font-size: 0.3em;
-    /* Smaller AM/PM */
-    margin-left: 0.2em;
-    vertical-align: middle;
-    /* Align AM/PM better */
-}
-
-#date-display {
-    font-size: calc(var(--clock-font-size) * 0.15);
-    /* Relative to clock size */
-    margin-top: 10px;
-    font-weight: 400;
-    opacity: 0.9;
-    display: none;
-    /* Hidden by default, controlled by JS */
-}
-
-/* Stacked layout specific styles */
-.layout-stacked #clock-display {
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
 }
 
-.layout-stacked #clock-display .separator {
-    display: none;
-    /* Hide colons in stacked */
+#main-display {
+    font-family: var(--clock-font-family);
+    /* Specifically for clock/timer numbers */
+    font-size: var(--clock-font-size);
+    font-weight: 400;
+    /* Adjust as needed for mono fonts */
+    line-height: 1;
+    white-space: nowrap;
+    transition: font-size 0.3s, font-family 0.3s;
+    min-height: calc(var(--clock-font-size) * 1.1);
+    /* Ensure space when switching to input */
+    display: flex;
+    /* To help center content when input is shown */
+    align-items: center;
+    justify-content: center;
 }
 
-.layout-stacked #clock-display span:not(#ampm) {
-    /* Each time unit on new line */
-    display: block;
+#main-display .clock-separator {
+    opacity: var(--separator-opacity);
+    margin: 0 0.05em;
 }
 
-.layout-stacked #clock-display #ampm {
-    font-size: 0.2em;
-    /* Even smaller for stacked layout */
-    margin-top: 0.1em;
+#main-display #clock-ampm {
+    font-size: 0.3em;
+    margin-left: 0.2em;
+    vertical-align: middle;
+}
+
+#timer-input {
+    font-family: var(--clock-font-family);
+    /* Use clock font for consistency */
+    font-size: var(--clock-font-size);
+    /* Match clock size */
+    font-weight: inherit;
+    color: var(--text-color);
+    background-color: transparent;
+    border: none;
+    border-bottom: 2px solid var(--text-color-muted, #555);
+    text-align: center;
+    width: 80%;
+    /* Adjust as needed */
+    max-width: 600px;
+    outline: none;
+    padding: 0.1em 0;
+    box-sizing: border-box;
+}
+
+#timer-input::placeholder {
+    color: #777;
+    font-size: 0.5em;
+    /* Smaller placeholder */
+    opacity: 0.7;
+}
+
+
+#date-display-container {
+    font-family: var(--settings-font-family);
+    /* Use sans-serif for date */
+    font-size: calc(var(--clock-font-size) * 0.12);
+    margin-top: 15px;
+    font-weight: 400;
+    opacity: 0.9;
+}
+
+#timer-controls-container {
+    margin-top: 20px;
+    display: flex;
+    gap: 15px;
+}
+
+.control-btn {
+    font-family: var(--settings-font-family);
+    background-color: var(--button-bg-color);
+    color: var(--text-color);
+    border: 1px solid #555;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+    /* Relative to body/container font */
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+.control-btn:hover {
+    background-color: var(--button-hover-bg-color);
+}
+
+.control-btn:active {
+    transform: scale(0.98);
+}
+
+.control-btn#timer-start-pause-btn.running {
+    /* Style for pause state */
+    background-color: #f0ad4e;
+    /* Orange */
+}
+
+.control-btn#timer-start-pause-btn.running:hover {
+    background-color: #eea236;
 }
 
 
@@ -100,20 +155,22 @@ body:hover .action-buttons {
 }
 
 .action-buttons button {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: rgba(50, 50, 50, 0.5);
+    /* Darker, semi-transparent */
     color: var(--text-color);
-    border: none;
+    border: 1px solid rgba(255, 255, 255, 0.1);
     padding: 8px;
     border-radius: 50%;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background-color 0.2s;
+    transition: background-color 0.2s, transform 0.1s;
 }
 
 .action-buttons button:hover {
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: rgba(70, 70, 70, 0.7);
+    transform: scale(1.1);
 }
 
 .action-buttons .material-icons {
@@ -130,7 +187,8 @@ body:hover .action-buttons {
     width: 100%;
     height: 100%;
     overflow: auto;
-    background-color: rgba(0, 0, 0, 0.6);
+    background-color: rgba(0, 0, 0, 0.7);
+    /* Darker overlay */
     align-items: center;
     justify-content: center;
 }
@@ -140,14 +198,17 @@ body:hover .action-buttons {
 }
 
 .modal-content {
-    background-color: #2c2c2c;
+    font-family: var(--settings-font-family);
+    /* Sans-serif for modal content */
+    background-color: #282828;
+    /* Slightly lighter dark */
     margin: auto;
     padding: 25px;
     border-radius: 8px;
     width: 90%;
     max-width: 450px;
     color: #f0f0f0;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
 }
 
 .modal-content h2 {
@@ -179,39 +240,47 @@ body:hover .action-buttons {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 10px;
 }
 
 .setting-group label {
-    margin-right: 10px;
+    flex-shrink: 0;
     font-size: 0.9em;
 }
 
 .setting-group input[type="color"],
 .setting-group input[type="number"],
 .setting-group select {
-    padding: 6px 8px;
+    padding: 7px 10px;
     border-radius: 4px;
     border: 1px solid #555;
     background-color: #3f3f3f;
     color: #f0f0f0;
     font-family: inherit;
+    /* Inherit Noto Sans */
+    flex-grow: 1;
+    min-width: 80px;
+    /* Ensure select/inputs don't get too small */
 }
 
 .setting-group input[type="number"] {
-    width: 60px;
+    width: 70px;
+    flex-grow: 0;
+    /* Don't let number input grow too much */
 }
 
 .setting-group input[type="color"] {
     padding: 2px;
-    /* Better for color picker */
     height: 30px;
     width: 50px;
+    flex-grow: 0;
 }
 
 .setting-group input[type="checkbox"] {
     width: 18px;
     height: 18px;
     cursor: pointer;
+    flex-grow: 0;
 }
 
 #reset-settings-btn {
@@ -225,8 +294,20 @@ body:hover .action-buttons {
     display: block;
     width: 100%;
     margin-top: 20px;
+    font-family: var(--settings-font-family);
 }
 
 #reset-settings-btn:hover {
     background-color: #5a5a5a;
+}
+
+/* Blinking cursor for timer finished */
+.timer-finished-blink {
+    animation: blink 1s step-start infinite;
+}
+
+@keyframes blink {
+    50% {
+        opacity: 0;
+    }
 }
