@@ -62,9 +62,13 @@ document.addEventListener("DOMContentLoaded", () => {
     // --- State Variables ---
     let appMode = "clock";
     let clockIntervalId = null;
-    let timerIntervalId = null;
+    let timerIntervalId = null; // For the 1-second logic tick
+    let timerAnimationFrameId = null; // For smooth progress bar animation
+    let timerStartTime = 0; // Timestamp when timer started/resumed
     let timerTotalSecondsSetAtStart = 0;
-    let timerSecondsRemaining = 0;
+    let timerSecondsRemaining = 0; // Tracks whole seconds remaining
+    let timeElapsedBeforePause = 0; // For resuming accurately
+
     let currentTimerSound = new Audio();
     let originalDocTitle = "ClockTab";
     let mouseMoveTimeout;
@@ -216,19 +220,53 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // --- Timer Logic ---
-    function updateTimerDisplayAndProgress() {
+    function smoothTimerUpdate() {
+        if (appMode !== "timerRunning") {
+            cancelAnimationFrame(timerAnimationFrameId);
+            return;
+        }
+
+        const currentTime = Date.now();
+        const elapsedTimeSinceStartOrResume =
+            (currentTime - timerStartTime) / 1000; // in seconds
+        const totalElapsedTime =
+            timeElapsedBeforePause + elapsedTimeSinceStartOrResume;
+
+        let currentSecondsRemainingVisual =
+            timerTotalSecondsSetAtStart - totalElapsedTime;
+
+        if (currentSecondsRemainingVisual < 0)
+            currentSecondsRemainingVisual = 0;
+
+        // Update Progress Bar smoothly
+        if (timerTotalSecondsSetAtStart > 0 && timerProgressBar) {
+            const progressPercentage =
+                (totalElapsedTime / timerTotalSecondsSetAtStart) * 100;
+            timerProgressBar.style.width = `${Math.min(
+                100,
+                progressPercentage
+            )}%`;
+        }
+
+        // Only update the displayed numbers if the whole second has changed
+        // The main timerInterval will handle the actual countdown logic
+        // This animation loop is purely for the smooth progress bar
+
+        timerAnimationFrameId = requestAnimationFrame(smoothTimerUpdate);
+    }
+
+    function timerTick() {
+        // This runs every second
+        timerSecondsRemaining--; // Actual logic decrement
+
         const { h, m, s } = formatSecondsToHMS(timerSecondsRemaining);
         displayTime(h, m, s);
         document.title = `(${formatTimeUnit(h)}:${formatTimeUnit(
             m
         )}:${formatTimeUnit(s)}) Timer - ClockTab`;
 
-        if (timerTotalSecondsSetAtStart > 0 && timerProgressBar) {
-            const progressPercentage =
-                ((timerTotalSecondsSetAtStart - timerSecondsRemaining) /
-                    timerTotalSecondsSetAtStart) *
-                100;
-            timerProgressBar.style.width = `${progressPercentage}%`;
+        if (timerSecondsRemaining < 0) {
+            finishTimer();
         }
     }
 
@@ -247,22 +285,39 @@ document.addEventListener("DOMContentLoaded", () => {
 
         appMode = "timerRunning";
         timerSecondsRemaining = timerTotalSecondsSetAtStart;
+        timerStartTime = Date.now(); // Record start time
+        timeElapsedBeforePause = 0; // Reset time elapsed before pause
+
         body.classList.add("timer-active");
         updateUIForAppMode();
 
-        timerIntervalId = setInterval(() => {
-            timerSecondsRemaining--;
-            if (timerSecondsRemaining < 0) {
-                finishTimer();
-            } else {
-                updateTimerDisplayAndProgress();
-            }
-        }, 1000);
+        // Initial display
+        const { h, m, s } = formatSecondsToHMS(timerSecondsRemaining);
+        displayTime(h, m, s);
+        document.title = `(${formatTimeUnit(h)}:${formatTimeUnit(
+            m
+        )}:${formatTimeUnit(s)}) Timer - ClockTab`;
+        if (timerProgressBar) timerProgressBar.style.width = "0%"; // Reset progress bar visually
+
+        // Start the 1-second interval for logic
+        clearInterval(timerIntervalId); // Clear any existing
+        timerIntervalId = setInterval(timerTick, 1000);
+
+        // Start the smooth animation loop for progress bar
+        cancelAnimationFrame(timerAnimationFrameId); // Clear any existing
+        timerAnimationFrameId = requestAnimationFrame(smoothTimerUpdate);
     }
 
     function pauseTimer() {
         if (appMode !== "timerRunning") return;
-        clearInterval(timerIntervalId);
+
+        clearInterval(timerIntervalId); // Stop the 1-second logic ticks
+        cancelAnimationFrame(timerAnimationFrameId); // Stop smooth progress updates
+
+        const currentTime = Date.now();
+        const elapsedTimeThisSession = (currentTime - timerStartTime) / 1000;
+        timeElapsedBeforePause += elapsedTimeThisSession; // Accumulate elapsed time
+
         appMode = "timerPaused";
         updateUIForAppMode();
         document.title = `(Paused) ${originalDocTitle}`;
@@ -270,23 +325,28 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function resumeTimer() {
         if (appMode !== "timerPaused") return;
+
         appMode = "timerRunning";
+        timerStartTime = Date.now(); // Reset start time for the current resume session
+
         body.classList.add("timer-active");
         updateUIForAppMode();
-        timerIntervalId = setInterval(() => {
-            timerSecondsRemaining--;
-            if (timerSecondsRemaining < 0) {
-                finishTimer();
-            } else {
-                updateTimerDisplayAndProgress();
-            }
-        }, 1000);
+
+        // Restart the 1-second interval for logic
+        clearInterval(timerIntervalId);
+        timerIntervalId = setInterval(timerTick, 1000);
+
+        // Restart the smooth animation loop
+        cancelAnimationFrame(timerAnimationFrameId);
+        timerAnimationFrameId = requestAnimationFrame(smoothTimerUpdate);
     }
 
     function resetTimer() {
         clearInterval(timerIntervalId);
+        cancelAnimationFrame(timerAnimationFrameId);
         timerSecondsRemaining = parseTimerInput(currentSettings.lastTimerInput);
         timerTotalSecondsSetAtStart = 0;
+        timeElapsedBeforePause = 0;
         if (timerProgressBar) timerProgressBar.style.width = "0%";
         body.classList.remove("timer-active");
 
@@ -298,6 +358,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function finishTimer() {
         clearInterval(timerIntervalId);
+        cancelAnimationFrame(timerAnimationFrameId);
         appMode = "timerFinished";
         if (timerProgressBar) timerProgressBar.style.width = "100%";
 
@@ -316,7 +377,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         setTimeout(() => {
             if (appMode === "timerFinished") {
-                // Only reset if still in finished state
                 body.classList.remove("timer-active");
                 if (timerProgressBar) timerProgressBar.style.width = "0%";
             }
@@ -330,13 +390,13 @@ document.addEventListener("DOMContentLoaded", () => {
         timerControlsContainer.style.display = "none";
         mainDisplay.classList.remove("timer-finished-blink");
         dateDisplayContainer.style.display = "none";
+
+        // Remove transition from progress bar when not actively running to avoid jump on reset/setup
         if (timerProgressBar) {
             timerProgressBar.style.transition =
-                appMode === "timerRunning" ||
-                appMode === "timerPaused" ||
-                appMode === "timerFinished"
-                    ? "width 0.5s linear"
-                    : "none";
+                appMode === "timerRunning" || appMode === "timerPaused"
+                    ? "width 0.1s linear"
+                    : "none"; // Make transition very fast or none
         }
 
         if (appMode === "clock") {
@@ -374,20 +434,27 @@ document.addEventListener("DOMContentLoaded", () => {
                 timerResetBtn.disabled = false;
                 body.classList.remove("timer-active");
                 if (timerProgressBar) timerProgressBar.style.width = "0%";
-            } else if (appMode === "timerRunning") {
+            } else if (
+                appMode === "timerRunning" ||
+                appMode === "timerPaused"
+            ) {
+                // Consolidate running and paused for display
                 clockDigitsContainer.style.visibility = "visible";
-                updateTimerDisplayAndProgress();
-                timerStartPauseBtn.textContent = "Pause";
-                timerStartPauseBtn.classList.add("running");
-                timerStartPauseBtn.disabled = false;
-                timerResetBtn.textContent = "Reset";
-                timerResetBtn.disabled = false;
-                body.classList.add("timer-active");
-            } else if (appMode === "timerPaused") {
-                clockDigitsContainer.style.visibility = "visible";
-                updateTimerDisplayAndProgress();
-                timerStartPauseBtn.textContent = "Resume";
-                timerStartPauseBtn.classList.remove("running");
+                // Display based on timerSecondsRemaining (which is updated by timerTick)
+                const { h, m, s } = formatSecondsToHMS(
+                    timerSecondsRemaining < 0 ? 0 : timerSecondsRemaining
+                );
+                displayTime(h, m, s);
+                document.title = `(${formatTimeUnit(h)}:${formatTimeUnit(
+                    m
+                )}:${formatTimeUnit(s)}) Timer - ClockTab`;
+
+                timerStartPauseBtn.textContent =
+                    appMode === "timerRunning" ? "Pause" : "Resume";
+                timerStartPauseBtn.classList.toggle(
+                    "running",
+                    appMode === "timerRunning"
+                );
                 timerStartPauseBtn.disabled = false;
                 timerResetBtn.textContent = "Reset";
                 timerResetBtn.disabled = false;
@@ -531,12 +598,9 @@ document.addEventListener("DOMContentLoaded", () => {
             if (appMode === "timerSetup") {
                 startTimer();
             } else if (appMode === "timerFinished") {
-                // If enter on finished, treat as reset then start
-                resetTimer(); // This will go to timerSetup
-                // Need a slight delay for UI to update before trying to start, or start from here
-                // For simplicity, we assume user will click start or type again.
-                // Or, call startTimer() directly but ensure appMode is 'timerSetup'
-                // For now, let reset put it in setup, user can then hit enter again or click start
+                resetTimer();
+                // No need to call startTimer here, resetTimer puts it in setup mode.
+                // User can then press Enter again if they want to start the same timer.
             }
         }
     });
