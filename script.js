@@ -62,7 +62,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let mouseLeaveTimeout;
 
     const defaultSettings = {
-        timeFormat: "24",
+        timeFormat: "12",
         clockFont: "'Roboto Mono', monospace",
         fontSize: "15",
         primaryHue: 210,
