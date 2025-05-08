@@ -1,8 +1,6 @@
 :root {
     /* --- Material You Inspired Theme --- */
-    /* !!! SET YOUR PRIMARY HUE HERE (0-360) !!! */
     --m3-primary-hue: 210;
-    /* Default Blue hue (e.g., 210 for blue, 120 for green, 0 for red, 270 for purple) */
 
     /* Core Colors (derived from hue) */
     --m3-primary: hsl(var(--m3-primary-hue), 85%, 60%);
@@ -23,16 +21,23 @@
     --m3-tertiary-container: hsl(calc(var(--m3-primary-hue) + 60), 40%, 25%);
     --m3-on-tertiary-container: hsl(calc(var(--m3-primary-hue) + 60), 40%, 88%);
 
+    /* Error Colors (for reset button) */
+    --m3-error-hue: 0;
+    /* Red */
+    --m3-error: hsl(var(--m3-error-hue), 70%, 50%);
+    --m3-on-error: hsl(var(--m3-error-hue), 70%, 95%);
+    --m3-error-container: hsl(var(--m3-error-hue), 70%, 20%);
+    --m3-on-error-container: hsl(var(--m3-error-hue), 70%, 85%);
+
+
     /* Surface Colors (backgrounds for dark theme) */
     --m3-surface-dim: hsl(var(--m3-primary-hue), 10%, 6%);
     --m3-surface: hsl(var(--m3-primary-hue), 10%, 10%);
-    /* Main background */
     --m3-surface-bright: hsl(var(--m3-primary-hue), 8%, 15%);
 
     --m3-surface-container-lowest: hsl(var(--m3-primary-hue), 12%, 4%);
     --m3-surface-container-low: hsl(var(--m3-primary-hue), 12%, 8%);
     --m3-surface-container: hsl(var(--m3-primary-hue), 12%, 12%);
-    /* Modal background */
     --m3-surface-container-high: hsl(var(--m3-primary-hue), 10%, 17%);
     --m3-surface-container-highest: hsl(var(--m3-primary-hue), 10%, 22%);
 
@@ -69,7 +74,6 @@
     --m3-shadow-2: 0 1px 2px 0 hsla(0, 0%, 0%, .3), 0 2px 6px 2px hsla(0, 0%, 0%, .15);
     --m3-shadow-3: 0 4px 8px 3px hsla(0, 0%, 0%, .3), 0 1px 3px hsla(0, 0%, 0%, .15);
 
-    /* Fallback CSS variables (still used by JS for font size, but theme colors are now primary) */
     --bg-color: var(--m3-surface);
     --text-color: var(--m3-on-surface);
 }
@@ -103,26 +107,44 @@ body {
     white-space: nowrap;
     transition: font-size 0.3s, font-family 0.3s;
     min-height: calc(var(--clock-font-size) * 1.15);
-    /* Increased for better input visibility */
     display: flex;
     align-items: center;
     justify-content: center;
     width: 90vw;
-    /* Ensure it has space */
+    position: relative;
+    /* For absolute positioning of timer input */
 }
 
-#main-display .clock-separator {
-    opacity: 0.7;
-    /* M3 prefers slightly less prominent separators */
-    margin: 0 0.03em;
+#main-display .clock-digits {
+    /* Wrapper for clock numbers for better control */
+    display: inline-flex;
+    /* Allows letter-spacing to work as expected */
+    align-items: baseline;
 }
+
+#main-display .clock-digits>span:not(.clock-ampm) {
+    /* Target H, M, S spans */
+    letter-spacing: -0.03em;
+    /* Slightly pull digits closer if needed, adjust per font */
+}
+
+
+#main-display .clock-separator.main-sep {
+    /* Target main colons */
+    opacity: 0.7;
+    margin: 0 0.01em;
+    /* Reduce space around colons */
+    padding: 0 0.01em;
+    /* Further fine-tuning if needed */
+    transform: scaleY(0.9);
+    /* Make colons slightly shorter if desired */
+}
+
 
 #main-display #clock-ampm {
     font-size: 0.25em;
-    /* Slightly adjusted for M3 */
     margin-left: 0.2em;
     vertical-align: baseline;
-    /* Better alignment */
     font-weight: 500;
     color: var(--m3-on-surface-variant);
 }
@@ -130,27 +152,32 @@ body {
 #timer-input {
     font-family: var(--clock-font-family);
     font-size: var(--clock-font-size);
+    /* Match clock size */
     font-weight: inherit;
     color: var(--m3-on-surface);
-    background-color: transparent;
+    background-color: var(--m3-surface-container-low);
+    /* Slight background for visibility */
     border: none;
     border-bottom: 2px solid var(--m3-primary);
-    /* Accent color for focus indication */
     text-align: center;
     width: 100%;
     /* Take full width of main-display */
     max-width: 700px;
-    /* Increased max-width */
     outline: none;
     padding: 0.05em 0;
-    /* Adjusted padding */
     box-sizing: border-box;
+    position: absolute;
+    /* Position over the clock digits when shown */
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 5;
+    /* Ensure it's above the clock digits */
 }
 
 #timer-input::placeholder {
     color: var(--m3-on-surface-variant);
     font-size: 0.35em;
-    /* Smaller placeholder */
     opacity: 0.8;
     font-weight: 300;
 }
@@ -158,7 +185,6 @@ body {
 #date-display-container {
     font-family: var(--ui-font-family);
     font-size: calc(var(--clock-font-size) * 0.10);
-    /* Smaller date */
     margin-top: 20px;
     font-weight: 400;
     color: var(--m3-on-surface-variant);
@@ -168,24 +194,18 @@ body {
     margin-top: 30px;
     display: flex;
     gap: 16px;
-    /* M3 standard gap */
 }
 
 /* Material You Button Styles */
 .control-btn, .m3-button-base {
-    /* Base for all M3 buttons */
     font-family: var(--ui-font-family);
     font-weight: 500;
-    /* Medium weight for buttons */
     padding: 10px 24px;
-    /* M3 standard padding */
     border-radius: var(--m3-corner-full);
-    /* Pill shape */
     border: none;
     cursor: pointer;
-    transition: background-color 0.2s, box-shadow 0.2s, transform 0.1s;
+    transition: background-color 0.2s, box-shadow 0.2s, transform 0.1s, opacity 0.2s;
     text-transform: none;
-    /* No uppercase */
     font-size: 0.9em;
     display: inline-flex;
     align-items: center;
@@ -193,13 +213,10 @@ body {
     gap: 8px;
     outline: none;
     position: relative;
-    /* For state layers */
     overflow: hidden;
-    /* For ripple/state layers */
 }
 
 .control-btn::before, .m3-button-base::before {
-    /* State Layer */
     content: "";
     position: absolute;
     top: 0;
@@ -207,7 +224,6 @@ body {
     right: 0;
     bottom: 0;
     background-color: currentColor;
-    /* Use text color for overlay */
     opacity: 0;
     transition: opacity 0.2s;
     pointer-events: none;
@@ -221,9 +237,13 @@ body {
     opacity: var(--m3-state-focus-opacity);
 }
 
+.control-btn:active, .m3-button-base:active {
+    transform: scale(0.98);
+}
+
+/* Moved transform here for all buttons */
 .control-btn:active::before, .m3-button-base:active::before {
     opacity: var(--m3-state-pressed-opacity);
-    transform: scale(0.98);
 }
 
 
@@ -236,8 +256,6 @@ body {
     background-color: hsl(var(--m3-primary-hue), 85%, 65%);
 }
 
-/* Slightly lighter/darker on hover */
-
 .m3-tonal-button {
     background-color: var(--m3-secondary-container);
     color: var(--m3-on-secondary-container);
@@ -247,20 +265,28 @@ body {
     background-color: hsl(var(--m3-primary-hue), 25%, 30%);
 }
 
-.m3-filled-tonal-button {
-    /* For reset settings etc. */
-    background-color: var(--m3-tertiary-container);
-    color: var(--m3-on-tertiary-container);
+/* Reset Button Style - M3 Error Button */
+.m3-error-button {
+    background-color: var(--m3-error-container);
+    /* A tonal error style */
+    color: var(--m3-on-error-container);
+    border: 1px solid var(--m3-error);
+    /* Optional: subtle border */
 }
 
-.m3-filled-tonal-button:hover {
-    background-color: hsl(calc(var(--m3-primary-hue) + 60), 40%, 30%);
+.m3-error-button:hover {
+    background-color: hsl(var(--m3-error-hue), 70%, 25%);
+    /* Darker on hover */
+}
+
+.m3-error-button:focus-visible::before {
+    background-color: var(--m3-error);
+    /* Use error color for focus state layer */
 }
 
 
 .control-btn#timer-start-pause-btn.running {
     background-color: var(--m3-tertiary);
-    /* Using tertiary for pause */
     color: var(--m3-on-tertiary);
 }
 
@@ -272,7 +298,6 @@ body {
 .action-buttons-container {
     position: fixed;
     top: 16px;
-    /* M3 spacing */
     right: 16px;
     z-index: 1000;
 }
@@ -280,24 +305,25 @@ body {
 .action-buttons {
     display: flex;
     gap: 8px;
-    /* M3 spacing */
-    opacity: 0.2;
-    /* Less visible until hover on body */
-    transition: opacity 0.3s ease-in-out;
+    opacity: 1;
+    /* Start visible */
+    transition: opacity 0.5s ease-in-out;
+    /* Smooth fade */
 }
 
-body:hover .action-buttons {
-    opacity: 1;
+.action-buttons.hidden {
+    opacity: 0;
+    pointer-events: none;
+    /* Prevent interaction when hidden */
 }
+
 
 .m3-icon-button {
     background-color: var(--m3-surface-container-high);
     color: var(--m3-on-surface-variant);
     border: none;
     padding: 8px;
-    /* M3 standard for icon buttons */
     border-radius: var(--m3-corner-full);
-    /* Circular */
     cursor: pointer;
     display: inline-flex;
     align-items: center;
@@ -309,7 +335,6 @@ body:hover .action-buttons {
 }
 
 .m3-icon-button::before {
-    /* State Layer */
     content: "";
     position: absolute;
     top: 0;
@@ -317,7 +342,6 @@ body:hover .action-buttons {
     right: 0;
     bottom: 0;
     background-color: var(--m3-primary);
-    /* Primary for icon button states */
     opacity: 0;
     transition: opacity 0.2s;
     pointer-events: none;
@@ -346,7 +370,6 @@ body:hover .action-buttons {
 
 
 .action-buttons .material-icons-outlined {
-    /* Changed to outlined */
     font-size: 24px;
 }
 
@@ -361,11 +384,9 @@ body:hover .action-buttons {
     height: 100%;
     overflow: auto;
     background-color: hsla(var(--m3-primary-hue), 10%, 5%, 0.6);
-    /* Scrim */
     align-items: center;
     justify-content: center;
     padding: 16px;
-    /* Ensure modal content isn't stuck to edges */
 }
 
 .modal.show {
@@ -375,39 +396,30 @@ body:hover .action-buttons {
 .modal-content {
     font-family: var(--ui-font-family);
     background-color: var(--m3-surface-container);
-    /* M3 Dialog color */
     color: var(--m3-on-surface);
     margin: auto;
     padding: 24px;
-    /* M3 Dialog padding */
     border-radius: var(--m3-corner-xl);
-    /* M3 Dialog shape */
     width: 90%;
     max-width: 480px;
-    /* Slightly wider modal */
     box-shadow: var(--m3-shadow-3);
     position: relative;
-    /* For close button positioning */
 }
 
 .modal-content h2 {
     margin-top: 0;
     font-weight: 500;
-    /* M3 Title style */
     font-size: 1.4em;
     color: var(--m3-on-surface);
     padding-bottom: 16px;
     margin-bottom: 20px;
-    /* No border, rely on spacing */
 }
 
 .modal-content .close-btn {
-    /* Repositioned to top right corner of modal content */
     position: absolute;
     top: 16px;
     right: 16px;
     padding: 4px;
-    /* Smaller padding as it's an icon button */
 }
 
 
@@ -428,9 +440,9 @@ body:hover .action-buttons {
 /* M3 Text Fields and Selects */
 .m3-text-field, .m3-select {
     font-family: var(--ui-font-family);
-    padding: 12px 16px;
+    padding: 10px 14px;
+    /* Reduced padding for selects */
     border-radius: var(--m3-corner-xs);
-    /* M3 text field shape (filled style) */
     border: 1px solid var(--m3-outline-variant);
     background-color: var(--m3-surface-container-highest);
     color: var(--m3-on-surface);
@@ -439,6 +451,21 @@ body:hover .action-buttons {
     font-size: 0.95em;
     transition: border-color 0.2s, box-shadow 0.2s;
     outline: none;
+    line-height: 1.2;
+    /* Ensure text isn't cut off in selects */
+    height: auto;
+    /* Allow select to determine its height */
+}
+
+.m3-select {
+    appearance: none;
+    /* For custom arrow if desired, or rely on browser default */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' height='24' viewBox='0 -960 960 960' width='24' fill='%23${(props) => props.arrowColor || 'e0e0e0'}'%3E%3Cpath d='M480-345 240-585l56-56 184 184 184-184 56 56-240 240Z'/%3E%3C/svg%3E");
+    /* Basic dropdown arrow */
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 30px;
+    /* Space for arrow */
 }
 
 .m3-text-field:focus, .m3-select:focus {
@@ -451,19 +478,48 @@ body:hover .action-buttons {
     flex-grow: 0;
 }
 
-/* input[type="color"] would need more specific M3 styling or a custom component */
+.m3-color-picker {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    width: 50px;
+    /* Or adjust as needed */
+    height: 30px;
+    background-color: transparent;
+    border: 1px solid var(--m3-outline-variant);
+    border-radius: var(--m3-corner-s);
+    cursor: pointer;
+    padding: 0;
+    /* Remove default padding */
+    flex-grow: 0;
+}
+
+.m3-color-picker::-webkit-color-swatch-wrapper {
+    padding: 0;
+    border-radius: var(--m3-corner-s);
+}
+
+.m3-color-picker::-webkit-color-swatch {
+    border: none;
+    border-radius: var(--m3-corner-s);
+}
+
+.m3-color-picker::-moz-color-swatch {
+    /* Firefox */
+    border: none;
+    border-radius: var(--m3-corner-s);
+}
+
 
 .m3-checkbox {
     width: 20px;
     height: 20px;
     cursor: pointer;
     accent-color: var(--m3-primary);
-    /* Uses browser default styling but with M3 accent */
     flex-shrink: 0;
     border: 2px solid var(--m3-outline);
     border-radius: var(--m3-corner-xs);
     appearance: none;
-    /* For custom styling */
     display: inline-grid;
     place-content: center;
     transition: background-color 0.2s, border-color 0.2s;
@@ -476,7 +532,6 @@ body:hover .action-buttons {
     transform: scale(0);
     transition: 120ms transform ease-in-out;
     box-shadow: inset 1em 1em var(--m3-on-primary);
-    /* Checkmark color */
     clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
 }
 
@@ -496,7 +551,6 @@ body:hover .action-buttons {
 
 
 #reset-settings-btn {
-    /* Uses M3 Filled Tonal */
     width: 100%;
     margin-top: 24px;
 }

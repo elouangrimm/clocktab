@@ -1,11 +1,22 @@
 document.addEventListener("DOMContentLoaded", () => {
     // --- DOM Elements ---
     const mainDisplay = document.getElementById("main-display");
+    // Dynamically create clock elements within main-display for better control
+    mainDisplay.innerHTML = `
+        <span class="clock-digits">
+            <span id="clock-hours">00</span><span class="clock-separator main-sep">:</span><span id="clock-minutes">00</span><span class="clock-separator main-sep" id="clock-second-separator">:</span><span id="clock-seconds">00</span>
+        </span>
+        <span id="clock-ampm"></span>
+        <input type="text" id="timer-input" placeholder="HH:MM:SS or MM:SS or SS" style="display: none;">
+    `;
+    const clockDigitsContainer = mainDisplay.querySelector(".clock-digits");
     const clockHoursEl = document.getElementById("clock-hours");
     const clockMinutesEl = document.getElementById("clock-minutes");
     const clockSecondsEl = document.getElementById("clock-seconds");
     const clockAmPmEl = document.getElementById("clock-ampm");
-    const clockSeparators = document.querySelectorAll(".clock-separator");
+    const clockSeparators = document.querySelectorAll(
+        ".clock-separator.main-sep"
+    );
     const clockSecondSeparator = document.getElementById(
         "clock-second-separator"
     );
@@ -20,6 +31,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const timerStartPauseBtn = document.getElementById("timer-start-pause-btn");
     const timerResetBtn = document.getElementById("timer-reset-btn");
 
+    const actionButtonsContainer = document.querySelector(".action-buttons");
     const modeSwitchBtn = document.getElementById("mode-switch-btn");
     const settingsBtn = document.getElementById("settings-btn");
     const fullscreenBtn = document.getElementById("fullscreen-btn");
@@ -30,7 +42,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const timeFormatSelect = document.getElementById("time-format-select");
     const fontSelect = document.getElementById("font-select");
     const fontSizeInput = document.getElementById("font-size-input");
-    const primaryHueInput = document.getElementById("bg-color-input-m3"); // Updated ID
+    const primaryColorPicker = document.getElementById("primary-color-picker");
     const showSecondsCheckbox = document.getElementById(
         "show-seconds-checkbox"
     );
@@ -46,12 +58,14 @@ document.addEventListener("DOMContentLoaded", () => {
     let timerSecondsRemaining = 0;
     let currentTimerSound = new Audio();
     let originalDocTitle = "Minimal Clock";
+    let mouseMoveTimeout;
+    let mouseLeaveTimeout;
 
     const defaultSettings = {
         timeFormat: "24",
         clockFont: "'Roboto Mono', monospace",
         fontSize: "15",
-        primaryHue: 210, // Default M3 Hue
+        primaryHue: 210,
         showSecondsClock: true,
         showDate: false,
         timerSound: "sounds/alarm1.mp3",
@@ -69,7 +83,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const parts = inputStr
             .split(":")
             .map((p) => parseInt(p.trim(), 10))
-            .filter((p) => !isNaN(p)); // Filter out NaN parts
+            .filter((p) => !isNaN(p));
         let totalSeconds = 0;
         if (parts.length === 1) {
             totalSeconds = parts[0];
@@ -88,13 +102,58 @@ document.addEventListener("DOMContentLoaded", () => {
         return { h, m, s };
     }
 
+    function hexToHue(hex) {
+        let r = 0,
+            g = 0,
+            b = 0;
+        if (hex.length == 4) {
+            r = parseInt(hex[1] + hex[1], 16);
+            g = parseInt(hex[2] + hex[2], 16);
+            b = parseInt(hex[3] + hex[3], 16);
+        } else if (hex.length == 7) {
+            r = parseInt(hex.substring(1, 3), 16);
+            g = parseInt(hex.substring(3, 5), 16);
+            b = parseInt(hex.substring(5, 7), 16);
+        }
+        r /= 255;
+        g /= 255;
+        b /= 255;
+        let cmin = Math.min(r, g, b),
+            cmax = Math.max(r, g, b),
+            delta = cmax - cmin,
+            h = 0;
+
+        if (delta == 0) h = 0;
+        else if (cmax == r) h = ((g - b) / delta) % 6;
+        else if (cmax == g) h = (b - r) / delta + 2;
+        else h = (r - g) / delta + 4;
+
+        h = Math.round(h * 60);
+        if (h < 0) h += 360;
+        return h;
+    }
+
+    function hueToHex(h) {
+        const s = 1,
+            l = 0.5; // Full saturation, 50% lightness for a vibrant color
+        const k = (n) => (n + h / 30) % 12;
+        const a = s * Math.min(l, 1 - l);
+        const f = (n) =>
+            l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+        const toHex = (x) => {
+            const hex = Math.round(x * 255).toString(16);
+            return hex.length === 1 ? "0" + hex : hex;
+        };
+        return `#${toHex(f(0))}${toHex(f(8))}${toHex(f(4))}`;
+    }
+
     function displayTime(hours, minutes, seconds, ampm = "") {
         clockHoursEl.textContent = formatTimeUnit(hours);
         clockMinutesEl.textContent = formatTimeUnit(minutes);
 
         const showSeconds =
             (appMode === "clock" && currentSettings.showSecondsClock) ||
-            appMode.startsWith("timer");
+            (appMode.startsWith("timer") && appMode !== "timerSetup");
 
         clockSecondsEl.style.display = showSeconds ? "" : "none";
         clockSecondSeparator.style.display = showSeconds ? "" : "none";
@@ -103,16 +162,10 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         clockAmPmEl.textContent = ampm;
-        clockAmPmEl.style.display = ampm && appMode === "clock" ? "" : "none"; // AM/PM only for clock
+        clockAmPmEl.style.display = ampm && appMode === "clock" ? "" : "none";
 
-        clockHoursEl.style.display = "";
-        clockMinutesEl.style.display = "";
-        clockSeparators.forEach((sep) => (sep.style.display = ""));
-        if (!showSeconds) {
-            // Re-evaluate second separator if seconds are hidden
-            clockSecondSeparator.style.display = "none";
-        }
-        timerInputEl.style.display = "none";
+        clockDigitsContainer.style.visibility = "visible";
+        timerInputEl.style.display = "none"; // Ensure timer input is hidden when displaying time
     }
 
     // --- Clock Logic ---
@@ -141,7 +194,6 @@ document.addEventListener("DOMContentLoaded", () => {
         originalDocTitle = title;
 
         if (currentSettings.showDate) {
-            // Date is handled by updateUIForAppMode now
             const options = {
                 weekday: "long",
                 year: "numeric",
@@ -216,23 +268,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function resetTimer() {
         clearInterval(timerIntervalId);
-        timerSecondsRemaining = timerTotalSecondsSet; // Reset to originally set time for quick restart
-        if (appMode === "timerSetup" || appMode === "timerFinished") {
-            // Or clear if in setup/finished
-            timerInputEl.value = currentSettings.lastTimerInput;
-            timerSecondsRemaining = parseTimerInput(
-                currentSettings.lastTimerInput
-            );
-        }
+        timerSecondsRemaining = parseTimerInput(currentSettings.lastTimerInput);
 
-        appMode = "timerSetup"; // Always go to setup on reset, prefill with last valid
+        appMode = "timerSetup";
         updateUIForAppMode();
         document.title = originalDocTitle;
         mainDisplay.classList.remove("timer-finished-blink");
-        if (appMode === "timerSetup") {
-            const { h, m, s } = formatSecondsToHMS(timerSecondsRemaining);
-            //displayTime(h, m, s); // Display the prefilled time
-        }
     }
 
     function finishTimer() {
@@ -251,29 +292,25 @@ document.addEventListener("DOMContentLoaded", () => {
                 .play()
                 .catch((e) => console.error("Error playing sound:", e));
         }
-        updateUIForAppMode(); // This will update buttons
+        updateUIForAppMode();
     }
 
     // --- UI Update Logic ---
     function updateUIForAppMode() {
-        clockHoursEl.style.display = "none";
-        clockMinutesEl.style.display = "none";
-        clockSecondsEl.style.display = "none";
-        clockAmPmEl.style.display = "none";
-        clockSeparators.forEach((sep) => (sep.style.display = "none"));
+        clockDigitsContainer.style.visibility = "hidden";
         timerInputEl.style.display = "none";
         timerControlsContainer.style.display = "none";
         mainDisplay.classList.remove("timer-finished-blink");
-        dateDisplayContainer.style.display = "none"; // Hide date by default
+        dateDisplayContainer.style.display = "none";
 
         if (appMode === "clock") {
             modeSwitchBtn.innerHTML =
                 '<i class="material-icons-outlined">timer</i>';
             modeSwitchBtn.title = "Switch to Timer";
             if (currentSettings.showDate) {
-                // Show date only in clock mode if enabled
                 dateDisplayContainer.style.display = "block";
             }
+            clockDigitsContainer.style.visibility = "visible";
             updateClock();
             if (clockIntervalId === null) {
                 clockIntervalId = setInterval(updateClock, 1000);
@@ -287,36 +324,37 @@ document.addEventListener("DOMContentLoaded", () => {
             timerControlsContainer.style.display = "flex";
 
             if (appMode === "timerSetup") {
+                clockDigitsContainer.style.visibility = "hidden";
                 timerInputEl.style.display = "block";
                 timerInputEl.value = currentSettings.lastTimerInput;
+                timerInputEl.focus();
                 timerStartPauseBtn.textContent = "Start";
                 timerStartPauseBtn.classList.remove("running");
                 timerStartPauseBtn.disabled = false;
                 timerResetBtn.textContent = "Reset";
-                // Optionally show the parsed time from input on main display
-                const initialTimerValue = parseTimerInput(
-                    currentSettings.lastTimerInput
-                );
-                const { h, m, s } = formatSecondsToHMS(initialTimerValue);
-                displayTime(h, m, s); // Show initial value in clock format
-                timerInputEl.style.display = "block"; // Then overlay input
+                timerResetBtn.disabled = false;
             } else if (appMode === "timerRunning") {
+                clockDigitsContainer.style.visibility = "visible";
                 updateTimerDisplay();
                 timerStartPauseBtn.textContent = "Pause";
                 timerStartPauseBtn.classList.add("running");
                 timerStartPauseBtn.disabled = false;
                 timerResetBtn.textContent = "Reset";
+                timerResetBtn.disabled = false;
             } else if (appMode === "timerPaused") {
+                clockDigitsContainer.style.visibility = "visible";
                 updateTimerDisplay();
                 timerStartPauseBtn.textContent = "Resume";
                 timerStartPauseBtn.classList.remove("running");
                 timerStartPauseBtn.disabled = false;
                 timerResetBtn.textContent = "Reset";
+                timerResetBtn.disabled = false;
             } else if (appMode === "timerFinished") {
+                clockDigitsContainer.style.visibility = "visible";
                 displayTime(0, 0, 0);
                 mainDisplay.classList.add("timer-finished-blink");
                 timerStartPauseBtn.textContent = "Start";
-                timerStartPauseBtn.disabled = true; // Can only reset
+                timerStartPauseBtn.disabled = true;
                 timerResetBtn.textContent = "Reset";
                 timerResetBtn.disabled = false;
             }
@@ -338,19 +376,17 @@ document.addEventListener("DOMContentLoaded", () => {
             currentSettings.primaryHue
         );
 
-        if (appMode === "clock") updateClock();
-        else if (appMode.startsWith("timer")) {
-            // If in timer setup, re-parse and display the time based on lastTimerInput
-            if (appMode === "timerSetup") {
-                const val = parseTimerInput(currentSettings.lastTimerInput);
-                const { h, m, s } = formatSecondsToHMS(val);
-                displayTime(h, m, s);
-                timerInputEl.style.display = "block"; // ensure input is visible over it
-            } else {
-                updateTimerDisplay(); // For running/paused states
+        primaryColorPicker.value = hueToHex(currentSettings.primaryHue);
+
+        if (appMode === "clock") {
+            updateClock();
+        } else if (appMode.startsWith("timer")) {
+            if (appMode !== "timerSetup") {
+                // Only update display if not in setup (where input is shown)
+                updateTimerDisplay();
             }
         }
-        updateUIForAppMode(); // Crucial to update date visibility etc.
+        updateUIForAppMode();
     }
 
     function saveSettings() {
@@ -363,7 +399,6 @@ document.addEventListener("DOMContentLoaded", () => {
     function loadSettings() {
         const saved = localStorage.getItem("minimalClockSettings");
         if (saved) {
-            // Merge saved settings with defaults to ensure new settings get default values
             currentSettings = { ...defaultSettings, ...JSON.parse(saved) };
         } else {
             currentSettings = { ...defaultSettings };
@@ -372,22 +407,69 @@ document.addEventListener("DOMContentLoaded", () => {
         timeFormatSelect.value = currentSettings.timeFormat;
         fontSelect.value = currentSettings.clockFont;
         fontSizeInput.value = currentSettings.fontSize;
-        primaryHueInput.value = currentSettings.primaryHue;
         showSecondsCheckbox.checked = currentSettings.showSecondsClock;
         showDateCheckbox.checked = currentSettings.showDate;
         timerSoundSelect.value = currentSettings.timerSound;
-        // timerInputEl.value is set by updateUIForAppMode based on currentSettings.lastTimerInput
 
-        applySettings(); // Apply loaded settings to the DOM/CSS variables
+        applySettings();
     }
+
+    // --- Action Button Fading Logic ---
+    function showActionButtons() {
+        clearTimeout(mouseMoveTimeout);
+        clearTimeout(mouseLeaveTimeout);
+        actionButtonsContainer.classList.remove("hidden");
+
+        mouseMoveTimeout = setTimeout(() => {
+            if (!settingsModal.classList.contains("show")) {
+                actionButtonsContainer.classList.add("hidden");
+            }
+        }, 5000);
+    }
+
+    function hideActionButtonsSoon() {
+        clearTimeout(mouseLeaveTimeout);
+        mouseLeaveTimeout = setTimeout(() => {
+            if (!settingsModal.classList.contains("show")) {
+                actionButtonsContainer.classList.add("hidden");
+            }
+        }, 3000);
+    }
+
+    document.addEventListener("mousemove", (e) => {
+        showActionButtons();
+        const cornerRect = actionButtonsContainer.getBoundingClientRect();
+        const isMouseInCorner =
+            e.clientX >= cornerRect.left - 50 && // Give some buffer
+            e.clientX <= cornerRect.right + 50 &&
+            e.clientY >= cornerRect.top - 50 &&
+            e.clientY <= cornerRect.bottom + 50;
+
+        if (!isMouseInCorner) {
+            hideActionButtonsSoon();
+        } else {
+            clearTimeout(mouseLeaveTimeout);
+        }
+    });
+    actionButtonsContainer.addEventListener("mouseenter", () => {
+        clearTimeout(mouseMoveTimeout);
+        clearTimeout(mouseLeaveTimeout);
+        actionButtonsContainer.classList.remove("hidden");
+    });
+    actionButtonsContainer.addEventListener("mouseleave", () => {
+        if (!settingsModal.classList.contains("show")) {
+            // Don't hide if settings are open and mouse just left buttons
+            hideActionButtonsSoon();
+        }
+    });
 
     // --- Event Listeners ---
     modeSwitchBtn.addEventListener("click", () => {
         if (appMode === "clock") {
             appMode = "timerSetup";
         } else {
-            resetTimer(); // This sets mode to timerSetup internally
-            appMode = "clock"; // Then switch to clock
+            resetTimer();
+            appMode = "clock";
         }
         updateUIForAppMode();
     });
@@ -403,15 +485,6 @@ document.addEventListener("DOMContentLoaded", () => {
         if (appMode === "timerSetup") timerInputEl.focus();
     });
 
-    timerInputEl.addEventListener("input", () => {
-        // Live update preview in timerSetup
-        if (appMode === "timerSetup") {
-            const currentVal = parseTimerInput(timerInputEl.value);
-            const { h, m, s } = formatSecondsToHMS(currentVal);
-            displayTime(h, m, s); // Show current input as formatted time
-            timerInputEl.style.display = "block"; // Keep input on top
-        }
-    });
     timerInputEl.addEventListener("keydown", (e) => {
         if (
             e.key === "Enter" &&
@@ -421,15 +494,21 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    settingsBtn.addEventListener("click", () =>
-        settingsModal.classList.add("show")
-    );
-    closeSettingsBtn.addEventListener("click", () =>
-        settingsModal.classList.remove("show")
-    );
+    settingsBtn.addEventListener("click", () => {
+        settingsModal.classList.add("show");
+        clearTimeout(mouseMoveTimeout);
+        clearTimeout(mouseLeaveTimeout);
+        actionButtonsContainer.classList.remove("hidden");
+    });
+    closeSettingsBtn.addEventListener("click", () => {
+        settingsModal.classList.remove("show");
+        showActionButtons();
+    });
     window.addEventListener("click", (event) => {
-        if (event.target === settingsModal)
+        if (event.target === settingsModal) {
             settingsModal.classList.remove("show");
+            showActionButtons();
+        }
     });
 
     // Settings Event Listeners
@@ -448,11 +527,13 @@ document.addEventListener("DOMContentLoaded", () => {
         applySettings();
         saveSettings();
     });
-    primaryHueInput.addEventListener("input", (e) => {
-        currentSettings.primaryHue = e.target.value;
+
+    primaryColorPicker.addEventListener("input", (e) => {
+        currentSettings.primaryHue = hexToHue(e.target.value);
         applySettings();
         saveSettings();
     });
+
     showSecondsCheckbox.addEventListener("change", (e) => {
         currentSettings.showSecondsClock = e.target.checked;
         applySettings();
@@ -474,8 +555,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 "Are you sure you want to reset all settings to their defaults?"
             )
         ) {
-            localStorage.removeItem("minimalClockSettings"); // Clear saved settings
-            loadSettings(); // Load defaults and apply
+            localStorage.removeItem("minimalClockSettings");
+            loadSettings();
             if (appMode.startsWith("timer")) {
                 resetTimer();
             }
@@ -483,15 +564,37 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // Fullscreen (no changes needed here for M3)
+    // Fullscreen
     fullscreenBtn.addEventListener("click", () => {
-        /* ... existing ... */
+        if (!document.fullscreenElement) {
+            document.documentElement
+                .requestFullscreen()
+                .then(
+                    () =>
+                        (fullscreenBtn.innerHTML =
+                            '<i class="material-icons-outlined">fullscreen_exit</i>')
+                )
+                .catch((err) =>
+                    console.error(`Error fullscreen: ${err.message}`)
+                );
+        } else {
+            document
+                .exitFullscreen()
+                .then(
+                    () =>
+                        (fullscreenBtn.innerHTML =
+                            '<i class="material-icons-outlined">fullscreen</i>')
+                );
+        }
     });
     document.addEventListener("fullscreenchange", () => {
-        /* ... existing ... */
+        fullscreenBtn.innerHTML = document.fullscreenElement
+            ? '<i class="material-icons-outlined">fullscreen_exit</i>'
+            : '<i class="material-icons-outlined">fullscreen</i>';
     });
 
     // --- Initialisation ---
-    loadSettings(); // Load saved or default settings FIRST
-    updateUIForAppMode(); // Then set up UI based on loaded settings and initial mode
+    loadSettings();
+    updateUIForAppMode();
+    showActionButtons();
 });
