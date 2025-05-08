@@ -344,6 +344,12 @@ document.addEventListener("DOMContentLoaded", () => {
     function resetTimer() {
         clearInterval(timerIntervalId);
         cancelAnimationFrame(timerAnimationFrameId);
+
+        if (currentTimerSound && !currentTimerSound.paused) {
+            currentTimerSound.pause();
+            currentTimerSound.currentTime = 0;
+        }
+
         timerSecondsRemaining = parseTimerInput(currentSettings.lastTimerInput);
         timerTotalSecondsSetAtStart = 0;
         timeElapsedBeforePause = 0;
