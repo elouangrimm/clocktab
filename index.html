@@ -18,18 +18,20 @@
         <div id="date-display-container"></div>
 
         <div id="timer-controls-container" style="display: none;">
-            <button id="timer-start-pause-btn" class="control-btn m3-filled-button">Start</button>
-            <button id="timer-reset-btn" class="control-btn m3-tonal-button">Reset</button>
+            <button id="timer-start-pause-btn" class="control-btn m3-filled-button"
+                data-translate-key="timer.start">Start</button>
+            <button id="timer-reset-btn" class="control-btn m3-tonal-button"
+                data-translate-key="timer.reset">Reset</button>
         </div>
     </div>
 
     <div class="action-buttons-container">
         <div class="action-buttons">
-            <button id="mode-switch-btn" class="m3-icon-button" title="Switch to Timer"><i
+            <button id="mode-switch-btn" class="m3-icon-button" data-translate-title-key="action.switchToTimer"><i
                     class="material-icons-outlined">timer</i></button>
-            <button id="settings-btn" class="m3-icon-button" title="Settings"><i
+            <button id="settings-btn" class="m3-icon-button" data-translate-title-key="action.settings"><i
                     class="material-icons-outlined">settings</i></button>
-            <button id="fullscreen-btn" class="m3-icon-button" title="Toggle Fullscreen"><i
+            <button id="fullscreen-btn" class="m3-icon-button" data-translate-title-key="action.fullscreen"><i
                     class="material-icons-outlined">fullscreen</i></button>
         </div>
     </div>
@@ -38,20 +40,32 @@
         <div class="modal-content m3-surface-container-high">
             <span class="close-btn m3-icon-button" id="close-settings-btn"><i
                     class="material-icons-outlined">close</i></span>
-            <h2>Settings</h2>
+            <h2 data-translate-key="settings.title">Settings</h2>
 
             <div class="setting-group">
-                <label for="time-format-switch-label">Time Format:</label> <!-- Label for the whole group -->
+                <label for="language-select" data-translate-key="settings.language">Language:</label>
+                <select id="language-select" class="m3-select">
+                    <option value="en">English</option>
+                    <option value="fr">Français</option>
+                    <option value="es">Español</option>
+                    <!-- Add more languages here -->
+                </select>
+            </div>
+
+            <div class="setting-group">
+                <label for="time-format-switch-label" data-translate-key="settings.timeFormat">Time Format:</label>
                 <div class="m3-switch-container">
-                    <span class="m3-switch-label" id="time-format-text-12h">12-Hour</span>
+                    <span class="m3-switch-label" id="time-format-text-12h"
+                        data-translate-key="settings.timeFormat12">12-Hour</span>
                     <input type="checkbox" id="time-format-switch" class="m3-switch">
-                    <label for="time-format-switch" class="m3-switch-track"></label> <!-- Clickable track -->
-                    <span class="m3-switch-label" id="time-format-text-24h">24-Hour</span>
+                    <label for="time-format-switch" class="m3-switch-track"></label>
+                    <span class="m3-switch-label" id="time-format-text-24h"
+                        data-translate-key="settings.timeFormat24">24-Hour</span>
                 </div>
             </div>
 
             <div class="setting-group">
-                <label for="font-select">Clock Font:</label>
+                <label for="font-select" data-translate-key="settings.clockFont">Clock Font:</label>
                 <select id="font-select" class="m3-select">
                     <option value="'Roboto Mono', monospace">Roboto Mono (Monospace)</option>
                     <option value="'Fragment Mono', monospace">Fragment Mono (Monospace)</option>
@@ -65,36 +79,43 @@
             </div>
 
             <div class="setting-group">
-                <label for="font-size-input">Clock Font Size (vw):</label>
+                <label for="font-size-input" data-translate-key="settings.fontSize">Clock Font Size (vw):</label>
                 <input type="number" id="font-size-input" class="m3-text-field" value="15" min="1" max="50" step="1">
             </div>
 
             <div class="setting-group">
-                <label for="primary-color-picker">Primary Color:</label>
+                <label for="primary-color-picker" data-translate-key="settings.primaryColor">Primary Color:</label>
                 <input type="color" id="primary-color-picker" class="m3-color-picker" value="#3B82F6">
+                <!-- Default blue, JS will update from saved hue -->
             </div>
 
             <div class="setting-group">
-                <label for="show-seconds-checkbox">Show Seconds (Clock):</label>
+                <label for="show-seconds-checkbox" data-translate-key="settings.showSeconds">Show Seconds
+                    (Clock):</label>
                 <input type="checkbox" id="show-seconds-checkbox" class="m3-checkbox" checked>
             </div>
 
             <div class="setting-group">
-                <label for="show-date-checkbox">Show Date:</label>
+                <label for="show-date-checkbox" data-translate-key="settings.showDate">Show Date:</label>
                 <input type="checkbox" id="show-date-checkbox" class="m3-checkbox">
             </div>
 
             <div class="setting-group">
-                <label for="timer-sound-select">Timer Sound:</label>
+                <label for="timer-sound-select" data-translate-key="settings.timerSound">Timer Sound:</label>
                 <select id="timer-sound-select" class="m3-select">
-                    <option value="sounds/Pixel.mp3">Pixel</option>
-                    <option value="sounds/star-jump.ogg">Star Jump</option>
-                    <option value="sounds/Tinsel.mp3">Tinsel</option>
-                    <option value="none">None</option>
+                    <option value="sounds/Pixel.mp3" data-translate-key="settings.soundPixel">Pixel</option>
+                    <option value="sounds/star-jump.ogg" data-translate-key="settings.soundStarJump">Star Jump</option>
+                    <option value="sounds/Tinsel.mp3" data-translate-key="settings.soundTinsel">Tinsel</option>
+                    <option value="none" data-translate-key="settings.soundNone">None</option>
                 </select>
             </div>
 
-            <button id="reset-settings-btn" class="m3-button-base m3-error-button">Reset to Defaults</button>
+            <button id="reset-settings-btn" class="m3-button-base m3-error-button"
+                data-translate-key="settings.resetDefaults">Reset to Defaults</button>
+
+            <br>
+
+            <p>Created by Elouan Grimm (© 2025).</p>
         </div>
     </div>
 

@@ -219,10 +219,6 @@ body.timer-active #timer-progress-bar {
     caret-color: var(--m3-primary);
 }
 
-#timer-input:focus {
-    /* No explicit border, relies on caret and behavior */
-}
-
 
 #timer-input::placeholder {
     color: var(--m3-on-surface-variant);
